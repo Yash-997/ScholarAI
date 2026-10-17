@@ -99,6 +99,16 @@ public class SourceMonitorService {
         return snapshots.findAll();
     }
 
+    /**
+     * True when no source has been fetched successfully within {@code maxAge}. A fresh database, a restore, or a host that
+     * was asleep through the cron slot all look like this, and the dates read from official pages exist only as database
+     * state, so such an instance would otherwise serve UNKNOWN statuses until the next scheduled run.
+     */
+    public boolean isStale(java.time.Duration maxAge) {
+        OffsetDateTime cutoff = OffsetDateTime.now(clock).minus(maxAge);
+        return snapshots.findAll().stream().noneMatch(s -> s.getLastSuccess() != null && s.getLastSuccess().isAfter(cutoff));
+    }
+
     public boolean isRunning() {
         return running.get();
     }

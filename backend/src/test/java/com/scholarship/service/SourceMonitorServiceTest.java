@@ -218,4 +218,14 @@ class SourceMonitorServiceTest {
         assertEquals(a, b);
         assertFalse(new ArrayList<>(List.of(a)).isEmpty());
     }
+
+    @Test
+    void staleUntilASourceHasBeenFetchedSuccessfully() {
+        java.time.Duration day = java.time.Duration.ofHours(24);
+        monitor.syncRegistry();
+        assertTrue(monitor.isStale(day), "never fetched");
+        next = page(BASE);
+        check();
+        assertFalse(monitor.isStale(day), "fetched at the fixed clock's now");
+    }
 }

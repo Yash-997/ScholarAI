@@ -54,6 +54,8 @@ app:
   ingestion:
     enabled: ${INGESTION_ENABLED:true}
     cron: ${INGESTION_CRON:0 30 3 * * *}
+    # Also check once after startup if no source was fetched successfully within this many hours (0 disables).
+    startup-max-age-hours: ${INGESTION_STARTUP_MAX_AGE_HOURS:24}
     fetch-timeout-ms: 15000
     max-attempts: ${INGESTION_MAX_ATTEMPTS:3}
     min-interval-ms: ${INGESTION_MIN_INTERVAL_MS:1500}
