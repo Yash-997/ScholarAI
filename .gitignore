@@ -1,3 +1,4 @@
+
 # Environment variables & secrets
 .env
 .env.*
@@ -7,6 +8,7 @@
 node_modules/
 frontend/node_modules/
 frontend/dist/
+dist/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
@@ -27,18 +29,20 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Ignore only root-level Python library/build directories
+/lib/
+/lib64/
+parts/
+sdist/
+var/
+wheels/
 
 # Java / Maven
 backend/target/
