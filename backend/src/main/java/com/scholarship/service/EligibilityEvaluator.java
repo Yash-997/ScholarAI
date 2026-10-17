@@ -24,7 +24,9 @@ import java.util.Set;
  */
 public final class EligibilityEvaluator {
 
-    private static final Set<String> WILDCARDS = Set.of("all", "all india", "all categories", "all courses", "any", "all genders", "");
+    private static final Set<String> WILDCARDS = Set.of("all", "all india", "all categories", "all category", "all castes",
+            "all caste", "all courses", "all states", "any", "any category", "all genders", "open to all", "open for all",
+            "all students", "no restriction", "");
 
     private EligibilityEvaluator() {
     }
@@ -56,8 +58,13 @@ public final class EligibilityEvaluator {
         if (p.state() != null && !tokenMatch(s.getState(), p.state(), EligibilityEvaluator::normalizeStateToken)) {
             out.add("scheme is limited to " + s.getState());
         }
-        if (p.category() != null && !tokenMatch(s.getCategoryCriteria(), p.category(), EligibilityEvaluator::normalizeCategory)) {
-            out.add("scheme is limited to categories " + s.getCategoryCriteria());
+        if (p.category() != null) {
+            if (s.getCategoryCriteria() == null || s.getCategoryCriteria().isBlank()) {
+                // Unknown is not "open to all": never recommend on the strength of a missing value.
+                out.add("scheme's category eligibility is not on record");
+            } else if (!tokenMatch(s.getCategoryCriteria(), p.category(), EligibilityEvaluator::normalizeCategory)) {
+                out.add("scheme is limited to categories " + s.getCategoryCriteria());
+            }
         }
         if (p.course() != null && !tokenMatch(s.getCourse(), p.course(), EligibilityEvaluator::normalizeCourse)) {
             out.add("scheme is limited to courses " + s.getCourse());
@@ -66,6 +73,15 @@ public final class EligibilityEvaluator {
             out.add("scheme is limited to gender " + s.getGenderRequirements());
         }
         return out;
+    }
+
+    /** True when the column names specific values; false when it is blank or contains a wildcard. Shared by every caller. */
+    public static boolean restricts(String column) {
+        if (column == null || column.isBlank()) return false;
+        for (String t : column.split("[;,|/]")) {
+            if (WILDCARDS.contains(t.trim().toLowerCase(Locale.ROOT))) return false;
+        }
+        return true;
     }
 
     private static boolean tokenMatch(String schemeValue, String studentValue, java.util.function.Function<String, String> norm) {

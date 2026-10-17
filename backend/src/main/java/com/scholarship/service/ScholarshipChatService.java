@@ -356,12 +356,7 @@ public class ScholarshipChatService {
     }
 
     private static boolean restricts(String column) {
-        if (column == null || column.isBlank()) return false;
-        for (String t : column.split("[;,|/]")) {
-            String l = t.trim().toLowerCase(Locale.ROOT);
-            if (l.equals("all") || l.equals("all india") || l.equals("all categories") || l.equals("all courses") || l.equals("any") || l.isEmpty()) return false;
-        }
-        return true;
+        return EligibilityEvaluator.restricts(column);
     }
 
     private static String readable(String column) {

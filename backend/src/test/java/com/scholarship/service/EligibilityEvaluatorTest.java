@@ -89,6 +89,72 @@ class EligibilityEvaluatorTest {
         assertFalse(eligible(sc, profile(null, null, null, "ST", null, null)));
     }
 
+    private static final String[] ALL_CATEGORIES = {"General", "EWS", "OBC", "SC", "ST", "VJNT", "Minority", "PWD", "Orphan"};
+
+    @Test
+    void openToAllCategories_matchesEveryCategory_inAnyWording() {
+        for (String wording : new String[]{"ALL", "All Categories", "all category", "Open to all", "Any", "All, OBC"}) {
+            ScholarshipEntity s = scheme(1, "Open");
+            s.setCategoryCriteria(wording);
+            for (String cat : ALL_CATEGORIES) {
+                assertTrue(eligible(s, profile(null, null, null, cat, null, null)), wording + " must admit " + cat);
+            }
+        }
+    }
+
+    @Test
+    void categorySpecificScheme_admitsOnlyThatCategory() {
+        ScholarshipEntity s = scheme(1, "SC only");
+        s.setCategoryCriteria("SC");
+        for (String cat : ALL_CATEGORIES) {
+            assertEquals(cat.equals("SC"), eligible(s, profile(null, null, null, cat, null, null)), cat);
+        }
+    }
+
+    @Test
+    void unknownSchemeCategory_isNotTreatedAsOpen() {
+        for (String unknown : new String[]{null, " "}) {
+            ScholarshipEntity s = scheme(1, "Unknown");
+            s.setCategoryCriteria(unknown);
+            assertFalse(eligible(s, profile(null, null, null, "OBC", null, null)));
+            assertTrue(eligible(s, profile(null, null, null, null, null, null)), "no student category -> not filtered");
+        }
+    }
+
+    @Test
+    void openToAllCategories_stillEnforcesOtherCriteria() {
+        ScholarshipEntity s = maxIncome(minMarks(scheme(1, "Open"), 60), 250000);
+        s.setCategoryCriteria("Open to all");
+        s.setState("Maharashtra");
+        s.setCourse("Engineering");
+        for (String cat : ALL_CATEGORIES) {
+            assertTrue(eligible(s, profile(200000L, 70.0, "Maharashtra", cat, "Engineering", null)));
+            assertFalse(eligible(s, profile(300000L, 70.0, "Maharashtra", cat, "Engineering", null)), "income");
+            assertFalse(eligible(s, profile(200000L, 50.0, "Maharashtra", cat, "Engineering", null)), "marks");
+            assertFalse(eligible(s, profile(200000L, 70.0, "Kerala", cat, "Engineering", null)), "state");
+            assertFalse(eligible(s, profile(200000L, 70.0, "Maharashtra", cat, "MBBS", null)), "course");
+        }
+    }
+
+    @Test
+    void recommendationsAndChatShareOneVerdict() {
+        ScholarshipEntity open = scheme(1, "Open");
+        open.setCategoryCriteria("Open to all");
+        ScholarshipEntity sc = scheme(2, "SC");
+        sc.setCategoryCriteria("SC");
+        com.scholarship.repository.ScholarshipRepository repo = org.mockito.Mockito.mock(com.scholarship.repository.ScholarshipRepository.class);
+        org.mockito.Mockito.when(repo.findByVerificationStatus("VERIFIED")).thenReturn(List.of(open, sc));
+        EligibilityService svc = new EligibilityService(repo, java.time.Clock.systemUTC());
+        for (String cat : ALL_CATEGORIES) {
+            EligibilityEvaluator.Profile p = profile(null, null, null, cat, null, null);
+            List<Long> recommended = svc.match(p).stream().map(m -> m.scheme().getId()).toList();
+            for (ScholarshipEntity s : List.of(open, sc)) {
+                assertEquals(recommended.contains(s.getId()), EligibilityEvaluator.failures(s, p).isEmpty(), cat + "/" + s.getName());
+            }
+            assertEquals(cat.equals("SC") ? List.of(1L, 2L) : List.of(1L), recommended, cat);
+        }
+    }
+
     @Test
     void courseAndGenderFilters() {
         ScholarshipEntity eng = scheme(1, "Eng");

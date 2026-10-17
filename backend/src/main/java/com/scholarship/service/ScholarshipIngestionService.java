@@ -394,11 +394,11 @@ public class ScholarshipIngestionService {
 
         // Category criteria
         List<String> categories = new ArrayList<>();
-        if (textLower.contains("sc") || textLower.contains("scheduled caste")) categories.add("SC");
-        if (textLower.contains("st") || textLower.contains("scheduled tribe")) categories.add("ST");
-        if (textLower.contains("obc") || textLower.contains("other backward")) categories.add("OBC");
-        if (textLower.contains("ebc") || textLower.contains("economically backward")) categories.add("EBC");
-        if (textLower.contains("general") || textLower.contains("open")) categories.add("Open");
+        if (textLower.matches("(?s).*\\bscs?\\b.*") || textLower.contains("scheduled caste")) categories.add("SC");
+        if (textLower.matches("(?s).*\\bsts?\\b.*") || textLower.contains("scheduled tribe")) categories.add("ST");
+        if (textLower.matches("(?s).*\\bobcs?\\b.*") || textLower.contains("other backward")) categories.add("OBC");
+        if (textLower.matches("(?s).*\\bebcs?\\b.*") || textLower.contains("economically backward")) categories.add("EBC");
+        if (textLower.matches("(?s).*\\bgeneral (category|caste|quota)\\b.*") || textLower.contains("open category")) categories.add("Open");
         entity.setCategoryCriteria(categories.isEmpty() ? "All Categories" : String.join(", ", categories));
 
         // Gender requirements

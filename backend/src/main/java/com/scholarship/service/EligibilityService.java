@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 /**
  * Applies {@link EligibilityEvaluator} to the VERIFIED schemes and attaches the computed status. This is the single
@@ -20,8 +19,6 @@ import java.util.Set;
  */
 @Service
 public class EligibilityService {
-
-    private static final Set<String> WILDCARDS = Set.of("all", "all india", "all categories", "all courses", "any", "");
 
     /** @param why the concrete criteria that were checked and passed, in plain words */
     public record Match(ScholarshipEntity scheme, SchemeStatusCalculator.Result status, List<String> why) {
@@ -87,11 +84,7 @@ public class EligibilityService {
     }
 
     private static boolean restricts(String column) {
-        if (column == null || column.isBlank()) return false;
-        for (String t : column.split("[;,|/]")) {
-            if (WILDCARDS.contains(t.trim().toLowerCase(Locale.ROOT))) return false;
-        }
-        return true;
+        return EligibilityEvaluator.restricts(column);
     }
 
     private static String rupees(BigDecimal v) {
