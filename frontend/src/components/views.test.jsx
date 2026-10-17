@@ -1,13 +1,13 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
-import axios from 'axios';
+import axios from '../lib/api';
 import { RegionProvider } from '../context/RegionContext';
 import EligibilityView from './EligibilityView';
 import ExploreSchemesView from './ExploreSchemesView';
 import ScholarshipChatView from './ScholarshipChatView';
 
-vi.mock('axios');
+vi.mock('../lib/api', () => ({ default: { get: vi.fn(), post: vi.fn() } }));
 
 const wrap = (ui) => render(<RegionProvider>{ui}</RegionProvider>);
 

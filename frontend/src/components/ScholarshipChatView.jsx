@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
+import api from '../lib/api';
 import { Send, Sparkles, Trash2, ExternalLink, ShieldCheck, Bot, User, BookOpen, Info } from 'lucide-react';
 import { useRegion } from '../context/RegionContext';
 import StatusBadge, { formatDate } from './StatusBadge';
@@ -143,7 +143,7 @@ export default function ScholarshipChatView() {
     }
 
     try {
-      const res = await axios.post('/api/v1/scholarships/chat', body, { timeout: 60000 });
+      const res = await api.post('/api/v1/scholarships/chat', body, { timeout: 60000 });
       setMessages((prev) => [
         ...prev,
         {

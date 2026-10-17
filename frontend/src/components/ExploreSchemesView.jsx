@@ -2,7 +2,7 @@ import StatusBadge from './StatusBadge';
 import { formatDate, deadlineLabel, provenanceText, sourceLink } from '../lib/schemes';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
+import api from '../lib/api';
 import { 
   Search, 
   ExternalLink, 
@@ -38,11 +38,11 @@ export default function ExploreSchemesView() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`/api/v1/scholarships?size=100&includeClosed=${showClosed}`);
+      const res = await api.get(`/api/v1/scholarships?size=100&includeClosed=${showClosed}`);
       const data = res.data.content || res.data || [];
       setScholarships(data);
       try {
-        const d = await axios.get('/api/v1/scholarships/discovered');
+        const d = await api.get('/api/v1/scholarships/discovered');
         setDiscovered(Array.isArray(d.data) ? d.data : []);
       } catch {
         setDiscovered([]);

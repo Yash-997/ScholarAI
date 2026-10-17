@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+import api from '../lib/api';
 import {
   Sparkles,
   CheckCircle,
@@ -105,7 +105,7 @@ export default function EligibilityView() {
         include_closed: showClosed
       };
       try {
-        const res = await axios.post(RECOMMEND_PATH, body, { timeout: 45000 });
+        const res = await api.post(RECOMMEND_PATH, body, { timeout: 45000 });
         if (requestId !== requestIdRef.current) return; // a newer request superseded this one
         setResults(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
