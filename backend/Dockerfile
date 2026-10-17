@@ -21,6 +21,11 @@ USER spring:spring
 # Copy built artifact from build stage
 COPY --from=build /app/target/scholarship-backend-1.0.0.jar app.jar
 
+# Seed data read by ScholarshipDataLoader at startup. The image is built from backend/, so ../dataset is not reachable;
+# backend/dataset mirrors the repo-level dataset/ folder (keep them in sync).
+COPY --chown=spring:spring dataset ./dataset
+ENV DATASET_PATH=/app/dataset/scholarships.csv
+
 # Expose Spring Boot web port
 EXPOSE 8080
 

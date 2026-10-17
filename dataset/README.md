@@ -25,3 +25,5 @@
 | `academic_year` | e.g. `2026-27`; informational |
 
 Deadlines and rates change every cycle. Confirm on the official portal before applying; open gaps are listed in `source_registry.csv`.
+
+Docker/Render: the backend image is built from `backend/`, so it ships `backend/dataset/` (a mirror of this folder). After editing the files here, copy them to `backend/dataset/`.
