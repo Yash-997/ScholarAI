@@ -1,0 +1,92 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: scholarship-recommendation-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://localhost:5433/scholarship_db}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USERNAME:postgres}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:local_dev_password}}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  ai:
+    openai:
+      api-key: ${GROQ_API_KEY:not-configured}
+      base-url: https://api.groq.com/openai/v1
+      chat:
+        options:
+          model: ${GROQ_MODEL:openai/gpt-oss-120b}
+          temperature: 0.2
+      embedding:
+        enabled: false
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        table-name: vector_store
+        dimensions: ${EMBEDDING_DIMENSIONS:768}
+        distance-type: cosine-distance
+        index-type: hnsw
+
+app:
+  timezone: Asia/Kolkata
+  dataset:
+    path: ${DATASET_PATH:../dataset/scholarships.csv}
+    # Rows missing from the CSV are archived (verification_status=ARCHIVED_LEGACY), never deleted.
+    archive-missing: true
+  ingestion:
+    enabled: ${INGESTION_ENABLED:true}
+    cron: ${INGESTION_CRON:0 30 3 * * *}
+    fetch-timeout-ms: 15000
+    max-attempts: ${INGESTION_MAX_ATTEMPTS:3}
+    min-interval-ms: ${INGESTION_MIN_INTERVAL_MS:1500}
+    respect-robots: true
+    max-discovered-per-source: ${INGESTION_MAX_DISCOVERED:60}
+  embedding:
+    # lexical (keyword matching, default) or openai-compatible (genuine semantic embeddings; see RemoteEmbeddingModel)
+    provider: ${EMBEDDING_PROVIDER:lexical}
+    base-url: ${EMBEDDING_BASE_URL:}
+    api-key: ${EMBEDDING_API_KEY:}
+    model: ${EMBEDDING_MODEL:}
+    dimensions: ${EMBEDDING_DIMENSIONS:768}
+  retrieval:
+    min-similarity: ${RETRIEVAL_MIN_SIMILARITY:}
+  rate-limit:
+    chat-per-minute: ${RATE_LIMIT_CHAT_PER_MINUTE:20}
+    recommend-per-minute: ${RATE_LIMIT_RECOMMEND_PER_MINUTE:60}
+    trust-real-ip-header: ${RATE_LIMIT_TRUST_REAL_IP:false}
+  llm:
+    timeout-seconds: ${LLM_TIMEOUT_SECONDS:25}
+  security:
+    admin-token: ${ADMIN_API_TOKEN:}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+    display-request-duration: true
+
+logging:
+  level:
+    root: INFO
+    com.scholarship: DEBUG
+    org.springframework.web: INFO
+    org.springframework.ai: INFO
+

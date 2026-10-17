@@ -1,0 +1,84 @@
+services:
+  # 1. PostgreSQL 16 with pgvector extension
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: scholarship-pgvector
+    environment:
+      POSTGRES_DB: scholarship_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - scholarship_pgdata_pg16:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d scholarship_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - scholarship-network
+
+  # 2. Unified Java 21 Spring Boot 3.3 AI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: scholarship-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/scholarship_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-local_dev_password}
+      # Optional: without a key the app starts and answers from its records, saying the AI model is not configured.
+      GROQ_API_KEY: ${GROQ_API_KEY:-not-configured}
+      # Optional: when set, admin and write endpoints require the header X-Admin-Token.
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
+      INGESTION_ENABLED: ${INGESTION_ENABLED:-true}
+      INGESTION_CRON: ${INGESTION_CRON:-0 30 3 * * *}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-25}
+      # Nginx sets X-Real-IP to the real client address; trust it only because requests arrive through Nginx.
+      RATE_LIMIT_TRUST_REAL_IP: "true"
+      # Optional genuine semantic embeddings (any OpenAI-compatible /embeddings endpoint). Off by default.
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-lexical}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-768}
+      SPRING_AI_OPENAI_BASE_URL: https://api.groq.com/openai/v1
+      # Groq retires models over time; override with GROQ_MODEL (list: GET https://api.groq.com/openai/v1/models)
+      SPRING_AI_OPENAI_CHAT_OPTIONS_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
+      SPRING_AI_OPENAI_CHAT_OPTIONS_TEMPERATURE: 0.2
+      DATASET_PATH: /dataset/scholarships.csv
+    volumes:
+      - ./dataset:/dataset:ro
+    restart: unless-stopped
+    networks:
+      - scholarship-network
+
+  # 3. React 18 (Vite, Tailwind, Framer Motion) Frontend served via Nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: scholarship-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+    networks:
+      - scholarship-network
+
+volumes:
+  scholarship_pgdata_pg16:
+
+networks:
+  scholarship-network:
+    driver: bridge
+
